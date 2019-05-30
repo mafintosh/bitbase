@@ -1,0 +1,14 @@
+{
+  "name": "bitbase",
+  "version": "0.0.0",
+  "description": "Bit database",
+  "author": "Mathias Buus (@mafintosh)",
+  "license": "MIT",
+  "repository": "mafintosh/bitbase",
+  "dependencies": {
+    "nanoresource": "^1.0.0"
+  },
+  "devDependencies": {
+    "standard": "^12.0.1"
+  }
+}
