@@ -1,8 +1,8 @@
 const Nanoresource = require('nanoresource')
 
 const FACTOR = 32768
-const MAX_BITS = 64
-const STEPS = new Array(4) //Math.ceil(MAX_BITS / Math.log2(FACTOR)))
+// const MAX_BITS = 64
+const STEPS = new Array(4) // Math.ceil(MAX_BITS / Math.log2(FACTOR)))
 
 STEPS[0] = 0
 for (let i = 1; i < STEPS.length; i++) {
@@ -57,7 +57,7 @@ class Node {
       this.oneOne = [
         new Uint32Array(buf.buffer, buf.byteOffset, 1024),
         new Uint32Array(buf.buffer, buf.byteOffset + 4096, 32),
-        new Uint32Array(buf.buffer, buf.byteOffset + 4096 + 128, 1),
+        new Uint32Array(buf.buffer, buf.byteOffset + 4096 + 128, 1)
       ]
 
       const cpy = Buffer.concat([ buf.slice(0, 4096) ])
@@ -65,19 +65,19 @@ class Node {
       this.allOne = [
         new Uint32Array(cpy.buffer, cpy.byteOffset, 1024),
         new Uint32Array(buf.buffer, buf.byteOffset + 4096 + 128 + 4, 32),
-        new Uint32Array(buf.buffer, buf.byteOffset + 4096 + 128 + 4 + 128, 1),
+        new Uint32Array(buf.buffer, buf.byteOffset + 4096 + 128 + 4 + 128, 1)
       ]
     } else {
       this.oneOne = [
         new Uint32Array(buf.buffer, buf.byteOffset, 1024),
         new Uint32Array(buf.buffer, buf.byteOffset + 4096, 32),
-        new Uint32Array(buf.buffer, buf.byteOffset + 4096 + 128, 1),
+        new Uint32Array(buf.buffer, buf.byteOffset + 4096 + 128, 1)
       ]
 
       this.allOne = [
         new Uint32Array(buf.buffer, buf.byteOffset + 4096 + 128 + 4, 1024),
         new Uint32Array(buf.buffer, buf.byteOffset + 4096 + 128 + 4 + 4096, 32),
-        new Uint32Array(buf.buffer, buf.byteOffset + 4096 + 128 + 4 + 4096 + 128, 1),
+        new Uint32Array(buf.buffer, buf.byteOffset + 4096 + 128 + 4 + 4096 + 128, 1)
       ]
     }
   }
@@ -196,6 +196,7 @@ module.exports = class Bits extends Nanoresource {
       visit(null, this.root)
 
       function visit (err, node) {
+        if (err) return cb(err)
         const n = node.first()
         if (n === -1) return cb(null, -1)
         if (node.y === 0) return cb(null, offset + n)
@@ -216,6 +217,7 @@ module.exports = class Bits extends Nanoresource {
       visit(null, this.root)
 
       function visit (err, node) {
+        if (err) return cb(err)
         const n = node.last()
         if (n === -1) return cb(null, -1)
         if (node.y === 0) return cb(null, offset + n)
@@ -325,59 +327,3 @@ function ctz32 (v) {
   if (v & 0x55555555) c -= 1
   return c
 }
-
-
-// return
-// const db = new Bits(require('random-access-file')('bits2'))
-
-// const i = 4242424224 //Math.floor(Math.random() * 0xffffffff)
-// console.log('i', i)
-// db.set(4242, true, function () {
-//   // console.log('?')
-//   db.set(i, true, function () {
-//     // console.log(i)
-//     // db.set(42424, true, function () {
-//       db.get(4242, (e, v) => console.log(4242 +'='+ v))
-//       db.get(4243, (e, v) => console.log(4243 +'='+ v))
-//       // db.get(42424, (e, v) => console.log(42424 +'='+ v))
-//       db.get(i, (e, v) => console.log(i +'='+ v))
-//       db.get(i+1, (e, v) => console.log(i+1 +'='+ v))
-//       // db.get(4242301, console.log)
-//     // })
-//   })
-// })
-
-// return
-/*
-// const db = new Bits(require('random-access-memory')())
-const db = new Bits(require('random-access-file')('bits'))
-
-db.set()
-
-db.last(console.log)
-db.first(console.log)
-
-db.last(function (e, n) {
-  db.get(n, console.log)
-})
-return
-const i = Math.floor(Math.random() * 0xffffffff)
-console.log('i', i)
-db.set(4242, true, function () {
-  console.log('?')
-  db.set(i, true, function () {
-    console.log(i)
-    db.set(42424, true, function () {
-    db.get(4242, console.log)
-    db.get(i, console.log)
-      // db.get(4242301, console.log)
-    })
-  })
-})
-
-// const r = new Node(0, 5, STEPS[5])
-
-// const a = r.child(0).child(0).child(0).child(0)
-
-// console.log(a.child(0), a.child(1), a.child(2))
-*/

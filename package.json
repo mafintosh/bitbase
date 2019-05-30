@@ -5,10 +5,14 @@
   "author": "Mathias Buus (@mafintosh)",
   "license": "MIT",
   "repository": "mafintosh/bitbase",
+  "scripts": {
+    "test": "standard && tape test.js"
+  },
   "dependencies": {
     "nanoresource": "^1.0.0"
   },
   "devDependencies": {
-    "standard": "^12.0.1"
+    "standard": "^12.0.1",
+    "tape": "^4.10.2"
   }
 }
