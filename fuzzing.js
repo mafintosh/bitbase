@@ -21,7 +21,7 @@ class Reference {
     }
   }
 
-  next (i) {
+  indexOf (i) {
     for (; i < this.trues.length; i++) {
       if (this.trues[i]) return i
     }
@@ -72,6 +72,20 @@ function validation (reference, actual, rng, opts = {}) {
         if (actual.get(i) !== reference.get(i)) {
           throw new Error('Invalid index ' + i)
         }
+      },
+      sameIteration (start) {
+        while (true) {
+          const a = actual.indexOf(start)
+          const b = reference.indexOf(start)
+
+          if (a !== b) {
+            throw new Error('Invalid start ' + start)
+          }
+
+          if (b === -1) return
+
+          start = b + 1
+        }
       }
     },
     validators: {
@@ -79,6 +93,16 @@ function validation (reference, actual, rng, opts = {}) {
         test: 'sameValue',
         operation (test) {
           for (let i = 0; i < opts.validation.randomIndices.indices; i++) {
+            const index = rng(32768)
+            test(index)
+          }
+        }
+      },
+      randomIteration: {
+        test: 'sameIteration',
+        operation (test) {
+          test(0)
+          for (let i = 0; i < opts.validation.randomIteration.starts; i++) {
             const index = rng(32768)
             test(index)
           }

@@ -21,6 +21,10 @@ module.exports = {
     randomIndices: {
       enabled: true,
       indices: 2000
+    },
+    randomIteration: {
+      enabled: true,
+      indices: 10
     }
   }
 }

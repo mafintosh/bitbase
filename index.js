@@ -82,10 +82,10 @@ module.exports = class IndexContainer {
     return (p << 5) | (Math.clz32(this.bits[p]))
   }
 
-  next (i) {
-    if (i === -1) return this.first()
+  indexOf (i) {
+    if (i === 0) return this.first()
 
-    const j = i >>> 5
+    const j = --i >>> 5
     let p = maskify(this.bits[j], i & 0b11111)
 
     if (p < 32) {
