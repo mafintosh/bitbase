@@ -18,7 +18,7 @@ module.exports = class IndexContainer {
 
     let prev = this.bits[j]
     this.bits[j] |= (0x80000000 >>> (i & 31))
-    console.log('set', i, j, (0x80000000 >>> (i & 31)).toString(2).padStart(32, '0'))
+
     if (this.bits[j] === prev) return
 
     const k = j >> 5
