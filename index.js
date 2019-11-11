@@ -50,24 +50,25 @@ module.exports = class IndexContainer {
     return (this.bits[i >> 5] & (0x80000000 >>> (i & 31))) !== 0
   }
 
-  // TODO: this is not right when setting the index
   fillTrue (start, end) {
-    for (; start < end; start++) {
-      this.setTrue(start)
-    }
-    // fillTrue(this.bits, start, end)
-    // fillTrue(this.index, start >>> 5, (end >>> 5) + ((end & 31) ? 1 : 0))
-    // fillTrue(this.top, start >>> 10, (end >>> 10) + ((end & 1023) ? 1 : 0))
+    if (end <= start) return
+    fillTrue(this.bits, start, end)
+    fillTrue(this.index, start >>> 5, (end >>> 5) + ((end & 31) ? 1 : 0))
+    fillTrue(this.top, start >>> 10, (end >>> 10) + ((end & 1023) ? 1 : 0))
   }
 
   // TODO: this is not right when setting the index
   fillFalse (start, end) {
-    for (; start < end; start++) {
-      this.setFalse(start)
-    }
-    // fillFalse(this.bits, start, end)
-    // fillFalse(this.index, start >>> 5, (end >>> 5))
-    // fillFalse(this.top, start >>> 10, (end >>> 10))
+    if (end <= start) return
+    const [s, e] = fillFalse(this.bits, start, end)
+    if (s) start += 32
+    if (e) end -= 32
+    if (end < 0) return
+    const [s1, e1] = fillFalse(this.index, (start >>> 5), (end >>> 5) + ((end & 31) ? 1 : 0))
+    if (s1) start += 1024
+    if (e1) end -= 1024
+    if (end < 0) return
+    fillFalse(this.top, (start >>> 10), (end >>> 10) + ((end & 1023) ? 1 : 0))
   }
 
   fill (start, end, val) {
@@ -135,7 +136,7 @@ function fillTrue (arr, start, end) {
 }
 
 function fillFalse (arr, start, end) {
-  if (start > end) return
+  if (start > end) return [true, true]
 
   const s = start >>> 5
   const e = end >>> 5
@@ -146,10 +147,12 @@ function fillFalse (arr, start, end) {
 
   if (s === e) {
     arr[s] &= (sm | em)
+    return [arr[s] > 0, arr[s] > 0]
   } else {
     arr[s] &= sm
     arr.fill(0, s + 1, e)
     arr[e] &= em
+    return [arr[s] > 0, arr[e - (er === 0 ? 1 : 0)] > 0]
   }
 }
 
