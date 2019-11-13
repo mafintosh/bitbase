@@ -57,8 +57,66 @@ module.exports = class IndexContainer {
     fillTrue(this.top, start >>> 10, (end >>> 10) + ((end & 1023) ? 1 : 0))
   }
 
-  // TODO: this is not right when setting the index
   fillFalse (start, end) {
+    if (start >= end) return
+
+    let sr = start & 31
+    let er = end & 31
+    let sm = ~(0xffffffff >>> sr)
+    let em = 0xffffffff >>> er
+    let s = start >>> 5
+    let e = end >>> 5
+
+    if (s === e) {
+      this.bits[s] &= (sm & em)
+    } else {
+      this.bits[s] &= sm
+      this.bits.fill(0, s + 1, e)
+      if (er > 0) {
+        this.bits[e] &= em
+        if (!this.bits[e]) {
+          e++
+          er = 0
+        }
+      }
+    }
+
+    if (e > 0 && this.bits[e - 1] > 0) e--
+    if (this.bits[s] > 0) s++
+    if (s >= e) return
+
+    sr = s & 31
+    er = e & 31
+    sm = ~(0xffffffff >>> sr)
+    em = 0xffffffff >>> er
+    s = s >>> 5
+    e = e >>> 5
+
+    if (s === e) {
+      this.index[s] &= (sm | em)
+    } else {
+      this.index[s] &= sm
+      this.index.fill(0, s + 1, e)
+      if (er > 0) {
+        this.index[e] &= em
+        if (!this.index[e]) {
+          e++
+          er = 0
+        }
+      }
+    }
+    if (e > 0 && this.index[e - 1] > 0)e--
+    if (this.index[s] > 0) s++
+    if (s >= e) return
+
+    sm = ~(0xffffffff >>> s)
+    em = e < 32 ? (0xffffffff >>> e) : 0
+
+    this.top[0] &= (sm | em)
+  }
+
+  // TODO: this is not right when setting the index
+  fillFalse_ (start, end) {
     if (end <= start) return
     const [s, e] = fillFalse(this.bits, start, end)
     if (s) start += 32
@@ -149,73 +207,10 @@ function fillFalse (arr, start, end) {
     arr[s] &= (sm | em)
     return [arr[s] > 0, arr[s] > 0]
   } else {
+    const p = arr[s]
     arr[s] &= sm
     arr.fill(0, s + 1, e)
     arr[e] &= em
     return [arr[s] > 0, arr[e - (er === 0 ? 1 : 0)] > 0]
   }
 }
-
-// const tmp = new Uint32Array(4)
-
-// fillTrue(tmp, 0, 4 * 32)
-// fillFalse(tmp, 1, 65)
-
-// for (let i = 0; i < tmp.length; i++) {
-//   console.log(tmp[i].toString(2).padStart(32, '0'))
-// }
-// return
-
-// const c = IndexContainer.alloc()
-// let i = -1
-
-// c.setTrue(0)
-// c.setTrue(29999)
-// c.setTrue(32000)
-// // c.fillTrue(31, 132)
-// c.fillFalse(30000, 32768)
-
-// do console.log('next:', i = c.next(i)); while (i !== -1)
-
-// return
-
-// c.setTrue(20000)
-// c.setTrue(20031)
-// c.setTrue(20032)
-// c.setTrue(30000)
-// console.log()
-
-// do console.log('next:', i = c.next(i)); while (i !== -1)
-
-// c.setFalse(20031)
-// console.log()
-
-// do console.log('next:', i = c.next(i)); while (i !== -1)
-
-// c.setTrue(20031)
-// c.setTrue(20033)
-// c.setTrue(20035)
-// console.log()
-
-// do console.log('next:', i = c.next(i)); while (i !== -1)
-
-// // console.log('next:', i = c.next(-1))
-// // console.log('next:', i = c.next(i))
-// // console.log('next:', i = c.next(i))
-// // console.log('next:', i = c.next(i))
-
-// // console.log(c.next(c.first()))
-
-// // console.log(c.get(100))
-
-// // console.log(i.next())
-// //c.setFalse(100)
-// //console.log(c.get(100))
-
-// // console.log(c.first().toString(2).padStart(32, '0'))
-
-// return
-
-// for (let i = 0; i < 32 * 1024; i++) {
-//   console.log(c.setTrue(i))
-// }
