@@ -60,35 +60,25 @@ module.exports = class IndexContainer {
   fillFalse (start, end) {
     if (start >= end) return
 
-    let sr = start & 31
-    let er = end & 31
-    let sm = ~(0xffffffff >>> sr)
-    let em = 0xffffffff >>> er
+    let sm = ~(0xffffffff >>> (start & 31))
+    let em = (0xffffffff >>> (end & 31))
     let s = start >>> 5
     let e = end >>> 5
 
     if (s === e) {
-      this.bits[s] &= (sm & em)
+      this.bits[s] &= (sm | em)
     } else {
       this.bits[s] &= sm
       this.bits.fill(0, s + 1, e)
-      if (er > 0) {
-        this.bits[e] &= em
-        if (!this.bits[e]) {
-          e++
-          er = 0
-        }
-      }
+      if (em !== 0xffffffff) this.bits[e] &= em
     }
 
-    if (e > 0 && this.bits[e - 1] > 0) e--
-    if (this.bits[s] > 0) s++
+    s = coerceFalseLeft(this.bits, s)
+    e = coerceFalseRight(this.bits, e)
     if (s >= e) return
 
-    sr = s & 31
-    er = e & 31
-    sm = ~(0xffffffff >>> sr)
-    em = 0xffffffff >>> er
+    sm = ~(0xffffffff >>> (s & 31))
+    em = (0xffffffff >>> (e & 31))
     s = s >>> 5
     e = e >>> 5
 
@@ -97,36 +87,17 @@ module.exports = class IndexContainer {
     } else {
       this.index[s] &= sm
       this.index.fill(0, s + 1, e)
-      if (er > 0) {
-        this.index[e] &= em
-        if (!this.index[e]) {
-          e++
-          er = 0
-        }
-      }
+      if (em !== 0xffffffff) this.index[e] &= em
     }
-    if (e > 0 && this.index[e - 1] > 0)e--
-    if (this.index[s] > 0) s++
+
+    s = coerceFalseLeft(this.index, s)
+    e = coerceFalseRight(this.index, e)
     if (s >= e) return
 
-    sm = ~(0xffffffff >>> s)
-    em = e < 32 ? (0xffffffff >>> e) : 0
+    sm = ~(0xffffffff >>> (s & 31))
+    em = e === 32 ? 0 : (0xffffffff >>> (e & 31))
 
     this.top[0] &= (sm | em)
-  }
-
-  // TODO: this is not right when setting the index
-  fillFalse_ (start, end) {
-    if (end <= start) return
-    const [s, e] = fillFalse(this.bits, start, end)
-    if (s) start += 32
-    if (e) end -= 32
-    if (end < 0) return
-    const [s1, e1] = fillFalse(this.index, (start >>> 5), (end >>> 5) + ((end & 31) ? 1 : 0))
-    if (s1) start += 1024
-    if (e1) end -= 1024
-    if (end < 0) return
-    fillFalse(this.top, (start >>> 10), (end >>> 10) + ((end & 1023) ? 1 : 0))
   }
 
   fill (start, end, val) {
@@ -170,6 +141,14 @@ module.exports = class IndexContainer {
   }
 }
 
+function coerceFalseLeft (arr, i) {
+  return arr[i] === 0 ? i : i + 1
+}
+
+function coerceFalseRight (arr, i) {
+  return arr[i] === 0 ? i + 1 : i
+}
+
 function maskify (n, f) {
   return f >= 31 ? 32 : Math.clz32(n & (0x7fffffff >>> f))
 }
@@ -194,7 +173,7 @@ function fillTrue (arr, start, end) {
 }
 
 function fillFalse (arr, start, end) {
-  if (start > end) return [true, true]
+  if (start >= end) return [true, true]
 
   const s = start >>> 5
   const e = end >>> 5
@@ -205,12 +184,9 @@ function fillFalse (arr, start, end) {
 
   if (s === e) {
     arr[s] &= (sm | em)
-    return [arr[s] > 0, arr[s] > 0]
   } else {
-    const p = arr[s]
     arr[s] &= sm
     arr.fill(0, s + 1, e)
     arr[e] &= em
-    return [arr[s] > 0, arr[e - (er === 0 ? 1 : 0)] > 0]
   }
 }
