@@ -1,4 +1,4 @@
-module.exports = class IndexContainer {
+module.exports = class IndexOneContainer {
   constructor (buffer) {
     this.bits = new Uint32Array(buffer.buffer, buffer.byteOffset, 1024)
     this.index = new Uint32Array(buffer.buffer, buffer.byteOffset + 4096, 32)
@@ -51,10 +51,38 @@ module.exports = class IndexContainer {
   }
 
   fillTrue (start, end) {
-    if (end <= start) return
-    fillTrue(this.bits, start, end)
-    fillTrue(this.index, start >>> 5, (end >>> 5) + ((end & 31) ? 1 : 0))
-    fillTrue(this.top, start >>> 10, (end >>> 10) + ((end & 1023) ? 1 : 0))
+    if (start >= end) return
+
+    let sm = (0xffffffff >>> (start & 31))
+    let em = ~(0xffffffff >>> (end & 31))
+    let s = start >>> 5
+    let e = end >>> 5
+
+    if (s === e) {
+      if ((this.bits[s] |= (sm & em)) !== 0) e++
+    } else {
+      this.bits[s] |= sm
+      this.bits.fill(0xffffffff, s + 1, e)
+      if (em !== 0) this.bits[e++] |= em
+    }
+
+    sm = (0xffffffff >>> (s & 31))
+    em = ~(0xffffffff >>> (e & 31))
+    s = s >>> 5
+    e = e >>> 5
+
+    if (s === e) {
+      if ((this.index[s] |= (sm & em)) !== 0) e++
+    } else {
+      this.index[s] |= sm
+      this.index.fill(0xffffffff, s + 1, e)
+      if (em !== 0) this.index[e++] |= em
+    }
+
+    sm = (0xffffffff >>> (s & 31))
+    em = e === 32 ? 0xffffffff : ~(0xffffffff >>> (e & 31))
+
+    this.top[0] |= (sm & em)
   }
 
   fillFalse (start, end) {
@@ -151,42 +179,4 @@ function coerceFalseRight (arr, i) {
 
 function maskify (n, f) {
   return f >= 31 ? 32 : Math.clz32(n & (0x7fffffff >>> f))
-}
-
-function fillTrue (arr, start, end) {
-  if (start > end) return
-
-  const sr = start & 31
-  const er = end & 31
-  const sm = (0xffffffff >>> sr)
-  const em = ~(0xffffffff >>> er)
-  const s = start >>> 5
-  const e = end >>> 5
-
-  if (s === e) {
-    arr[s] |= (sm & em)
-  } else {
-    arr[s] |= sm
-    arr.fill(0xffffffff, s + 1, e)
-    arr[e] |= em
-  }
-}
-
-function fillFalse (arr, start, end) {
-  if (start >= end) return [true, true]
-
-  const s = start >>> 5
-  const e = end >>> 5
-  const sr = start & 31
-  const er = end & 31
-  const sm = ~(0xffffffff >>> sr)
-  const em = (0xffffffff >>> er)
-
-  if (s === e) {
-    arr[s] &= (sm | em)
-  } else {
-    arr[s] &= sm
-    arr.fill(0, s + 1, e)
-    arr[e] &= em
-  }
 }
